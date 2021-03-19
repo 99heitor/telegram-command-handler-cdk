@@ -1,0 +1,33 @@
+{
+  "name": "telegram-command-handler-cdk",
+  "version": "0.1.0",
+  "bin": {
+    "gecko-cdk": "bin/gecko-cdk.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "@aws-cdk/assert": "1.94.1",
+    "@types/jest": "^26.0.10",
+    "@types/node": "10.17.27",
+    "jest": "^26.4.2",
+    "ts-jest": "^26.2.0",
+    "aws-cdk": "1.94.1",
+    "ts-node": "^9.0.0",
+    "typescript": "~3.9.7"
+  },
+  "dependencies": {
+    "@aws-cdk/aws-codepipeline": "^1.94.1",
+    "@aws-cdk/aws-codepipeline-actions": "^1.94.1",
+    "@aws-cdk/aws-lambda": "^1.94.1",
+    "@aws-cdk/aws-ssm": "^1.94.1",
+    "@aws-cdk/core": "1.94.1",
+    "@aws-cdk/pipelines": "^1.94.1",
+    "@types/aws-lambda": "^8.10.72",
+    "source-map-support": "^0.5.16"
+  }
+}
