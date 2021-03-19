@@ -1,6 +1,6 @@
 import * as codepipeline from '@aws-cdk/aws-codepipeline';
 import * as codepipeline_actions from '@aws-cdk/aws-codepipeline-actions';
-import * as ssm from '@aws-cdk/aws-ssm'
+import * as codecommit from '@aws-cdk/aws-codecommit';
 import { Construct, SecretValue, Stack, StackProps } from '@aws-cdk/core';
 import { CdkPipeline, SimpleSynthAction } from "@aws-cdk/pipelines";
 
@@ -13,17 +13,19 @@ export class PipelineGeckoCdkStack extends Stack {
 
     const sourceArtifact = new codepipeline.Artifact();
     const cloudAssemblyArtifact = new codepipeline.Artifact();
+
+    const repo = codecommit.Repository.fromRepositoryName(this, 'CdkSourceRepo', "telegram-command-handler-cdk");
+    
  
     const pipeline = new CdkPipeline(this, 'Pipeline', {
-      pipelineName: 'GeckoPipeline',
+      pipelineName: 'TelegramCommandHandlerPipeline',
       cloudAssemblyArtifact,
 
-      sourceAction: new codepipeline_actions.GitHubSourceAction({
-        actionName: 'GitHub',
+      sourceAction: new codepipeline_actions.CodeCommitSourceAction({
+        actionName: 'CodeCommitCdkSource',
         output: sourceArtifact,
-        oauthToken: SecretValue.ssmSecure('github-token', '1'),
-        owner: '99heitor',
-        repo: 'telegram-command-handler-cdk',
+        repository: repo,
+        branch: 'main'
       }),
 
        synthAction: SimpleSynthAction.standardNpmSynth({
