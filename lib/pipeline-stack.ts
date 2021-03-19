@@ -7,7 +7,7 @@ import { CdkPipeline, SimpleSynthAction } from "@aws-cdk/pipelines";
 /**
  * The stack that defines the application pipeline
  */
-export class PipelineGeckoCdkStack extends Stack {
+export class TelegramCommandHandlerStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
