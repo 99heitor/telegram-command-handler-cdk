@@ -1,26 +1,20 @@
-import * as apigw from '@aws-cdk/aws-apigateway';
 import * as lambda from '@aws-cdk/aws-lambda';
-import { CfnOutput, Construct, Stack, StackProps } from '@aws-cdk/core';
-import * as path from 'path';
+import { Construct, Stack, StackProps } from '@aws-cdk/core';
 
-/**
- * A stack for our simple Lambda-powered web service
- */
-export class LambdaStack extends Stack {
-  /**
-   * The URL of the API Gateway endpoint, for use in the integ tests
-   */
-  public readonly urlOutput: CfnOutput;
- 
+
+export class TelegramCommandHandlerStack extends Stack {  
+  public readonly pkmnQuizBotCode: lambda.CfnParametersCode;
+  
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
-
-    // The Lambda function that contains the functionality
-    const handler = new lambda.Function(this, 'Lambda', {
-      runtime: lambda.Runtime.NODEJS_12_X,
-      handler: 'handler.handler',
-      code: lambda.Code.fromAsset(path.resolve(__dirname, 'lambda')),
+    
+    this.pkmnQuizBotCode = lambda.Code.fromCfnParameters();
+    
+    const pkmnQuizBotLambda = new lambda.Function(this, 'Lambda', {
+      runtime: lambda.Runtime.GO_1_X,
+      handler: 'main',
+      code: this.pkmnQuizBotCode,
     });
-
+    
   }
 }

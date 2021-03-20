@@ -1,0 +1,15 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      npm install
+  build:
+    on-failure: ABORT
+    commands:
+      - npm run build
+      - npm run cdk synth -- -o dist
+artifacts:
+  base-directory: dist
+  files:
+    - TelegramCommandHandlerStack.template.json
