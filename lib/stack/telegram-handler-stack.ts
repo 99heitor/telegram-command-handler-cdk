@@ -6,7 +6,7 @@ import * as path from 'path';
 /**
  * A stack for our simple Lambda-powered web service
  */
-export class CdkpipelinesDemoStack extends Stack {
+export class LambdaStack extends Stack {
   /**
    * The URL of the API Gateway endpoint, for use in the integ tests
    */
@@ -22,14 +22,5 @@ export class CdkpipelinesDemoStack extends Stack {
       code: lambda.Code.fromAsset(path.resolve(__dirname, 'lambda')),
     });
 
-    // An API Gateway to make the Lambda web-accessible
-    const gw = new apigw.LambdaRestApi(this, 'Gateway', {
-      description: 'Endpoint for a simple Lambda-powered web service',
-      handler,
-    });
-
-    this.urlOutput = new CfnOutput(this, 'Url', {
-      value: gw.url,
-    });
   }
 }

@@ -2,7 +2,7 @@
   "name": "telegram-command-handler-cdk",
   "version": "0.1.0",
   "bin": {
-    "gecko-cdk": "bin/gecko-cdk.js"
+    "telegram-command-handler-cdk": "bin/telegram-command-handler-cdk.js"
   },
   "scripts": {
     "build": "tsc",
