@@ -46,7 +46,7 @@ export class PipelineStack extends Stack {
               actionName: 'CodeCommit_PkmnQuizBot_Source',
               repository: pkmnQuizBotRepo,
               output: pkmnQuizBotSourceArtifact,
-              branch: 'master'
+              branch: 'lambda'
             })
           ],
         },
