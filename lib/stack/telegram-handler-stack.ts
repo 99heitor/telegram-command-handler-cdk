@@ -2,6 +2,7 @@ import * as lambda from '@aws-cdk/aws-lambda';
 import * as sqs from '@aws-cdk/aws-sqs';
 import * as sns from '@aws-cdk/aws-sns';
 import * as subscriptions from '@aws-cdk/aws-sns-subscriptions';
+import * as iam from '@aws-cdk/aws-iam'
 import { Construct, Stack, StackProps } from '@aws-cdk/core';
 import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources';
 
@@ -13,8 +14,9 @@ export class TelegramCommandHandlerStack extends Stack {
         
     this.pkmnQuizBotCode = lambda.Code.fromCfnParameters();
     const pkmnQuizBotLambda = new lambda.Function(this, 'Lambda', {
+      functionName: 'PkmnQuizBotLambda',
       runtime: lambda.Runtime.GO_1_X,
-      handler: 'main',
+      handler: 'lambdaHandler',
       code: this.pkmnQuizBotCode,
     });
     
@@ -23,13 +25,19 @@ export class TelegramCommandHandlerStack extends Stack {
     });
     pkmnQuizBotLambda.addEventSource(new SqsEventSource(pkmnCommandQueue))
     
-    const generalCommandTopic = new sns.Topic(this, 'TelegramCommandTopic', {
+    const commandTopic = new sns.Topic(this, 'TelegramCommandTopic', {
       topicName: "telegram-command-topic"
     })
-    generalCommandTopic.addSubscription(new subscriptions.SqsSubscription(pkmnCommandQueue, {
+    commandTopic.addSubscription(new subscriptions.SqsSubscription(pkmnCommandQueue, {
       filterPolicy: {
         "bot": sns.SubscriptionFilter.stringFilter({whitelist: ["pokemon_quiz_bot"]})
       }
     }))
+
+    const commandPublisher = new iam.User(this, 'TelegramCommandPublisher', {
+      userName: 'command-publisher'
+    })
+
+    commandTopic.grantPublish(commandPublisher)
   }
 }
