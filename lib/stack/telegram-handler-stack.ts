@@ -3,6 +3,7 @@ import * as sqs from '@aws-cdk/aws-sqs';
 import * as sns from '@aws-cdk/aws-sns';
 import * as subscriptions from '@aws-cdk/aws-sns-subscriptions';
 import * as iam from '@aws-cdk/aws-iam'
+import * as ssm from '@aws-cdk/aws-ssm'
 import { Construct, Stack, StackProps } from '@aws-cdk/core';
 import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources';
 
@@ -30,14 +31,26 @@ export class TelegramCommandHandlerStack extends Stack {
     })
     commandTopic.addSubscription(new subscriptions.SqsSubscription(pkmnCommandQueue, {
       filterPolicy: {
-        "bot": sns.SubscriptionFilter.stringFilter({whitelist: ["pokemon_quiz_bot"]})
-      }
+        "bot": sns.SubscriptionFilter.stringFilter({whitelist: ["pokemon-quiz-bot"]})
+      },
+      rawMessageDelivery: true
     }))
+
+    new ssm.StringParameter(this, 'commandTopicArn', {
+      parameterName: '/telegram/topic/command',
+      stringValue: commandTopic.topicArn
+    })
+
+    const ssmPolicy = new iam.PolicyStatement()
+    ssmPolicy.addActions("ssm:GetParameter", "ssm:GetParametersByPath")
+    ssmPolicy.addAllResources()
+    pkmnQuizBotLambda.addToRolePolicy(ssmPolicy)
 
     const commandPublisher = new iam.User(this, 'TelegramCommandPublisher', {
       userName: 'command-publisher'
     })
 
+    commandPublisher.addToPolicy(ssmPolicy)
     commandTopic.grantPublish(commandPublisher)
   }
 }
