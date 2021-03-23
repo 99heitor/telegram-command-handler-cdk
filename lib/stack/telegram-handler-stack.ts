@@ -1,4 +1,5 @@
 import * as lambda from '@aws-cdk/aws-lambda';
+import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import * as sqs from '@aws-cdk/aws-sqs';
 import * as sns from '@aws-cdk/aws-sns';
 import * as subscriptions from '@aws-cdk/aws-sns-subscriptions';
@@ -12,7 +13,9 @@ export class TelegramCommandHandlerStack extends Stack {
   
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
-        
+
+    // Lambda definitions
+
     this.pkmnQuizBotCode = lambda.Code.fromCfnParameters();
     const pkmnQuizBotLambda = new lambda.Function(this, 'Lambda', {
       functionName: 'PkmnQuizBotLambda',
@@ -20,6 +23,8 @@ export class TelegramCommandHandlerStack extends Stack {
       handler: 'lambdaHandler',
       code: this.pkmnQuizBotCode,
     });
+
+    // Creating and connecting topic and queues
     
     const pkmnCommandQueue = new sqs.Queue(this, 'PokemonCommandQueue', {
       queueName: 'pokemon-quiz-command-queue'
@@ -36,21 +41,32 @@ export class TelegramCommandHandlerStack extends Stack {
       rawMessageDelivery: true
     }))
 
+    // Saving our topic ARN to SSM since it's used by an application outside of this CDK stack
+
     new ssm.StringParameter(this, 'commandTopicArn', {
       parameterName: '/telegram/topic/command',
       stringValue: commandTopic.topicArn
     })
 
+    // DynamoDb
+
+    const table = new dynamodb.Table(this, 'ChatConfig', {
+      tableName: "ChatConfig",
+      partitionKey: { name: 'id', type: dynamodb.AttributeType.NUMBER }
+    })
+
+    // Permissions
+
     const ssmPolicy = new iam.PolicyStatement()
     ssmPolicy.addActions("ssm:GetParameter", "ssm:GetParametersByPath")
     ssmPolicy.addAllResources()
     pkmnQuizBotLambda.addToRolePolicy(ssmPolicy)
-
-    const commandPublisher = new iam.User(this, 'TelegramCommandPublisher', {
+    table.grantReadWriteData(pkmnQuizBotLambda)
+    const commandPublisherUser = new iam.User(this, 'TelegramCommandPublisher', {
       userName: 'command-publisher'
     })
 
-    commandPublisher.addToPolicy(ssmPolicy)
-    commandTopic.grantPublish(commandPublisher)
+    commandPublisherUser.addToPolicy(ssmPolicy)
+    commandTopic.grantPublish(commandPublisherUser)
   }
 }
