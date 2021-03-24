@@ -32,11 +32,11 @@ export class TelegramCommandHandlerStack extends Stack {
     pkmnQuizBotLambda.addEventSource(new SqsEventSource(pkmnCommandQueue))
     
     const commandTopic = new sns.Topic(this, 'TelegramCommandTopic', {
-      topicName: "telegram-command-topic"
+      topicName: 'telegram-command-topic'
     })
     commandTopic.addSubscription(new subscriptions.SqsSubscription(pkmnCommandQueue, {
       filterPolicy: {
-        "bot": sns.SubscriptionFilter.stringFilter({whitelist: ["pokemon-quiz-bot"]})
+        'bot': sns.SubscriptionFilter.stringFilter({whitelist: ['pokemon-quiz-bot']})
       },
       rawMessageDelivery: true
     }))
@@ -50,18 +50,30 @@ export class TelegramCommandHandlerStack extends Stack {
 
     // DynamoDb
 
-    const table = new dynamodb.Table(this, 'ChatConfig', {
-      tableName: "ChatConfig",
+    const chatConfigTable = new dynamodb.Table(this, 'ChatConfig', {
+      tableName: 'ChatConfig',
       partitionKey: { name: 'id', type: dynamodb.AttributeType.NUMBER }
+    })
+
+    const naviPaymentsTable = new dynamodb.Table(this, 'NaviPayments', {
+      tableName: 'NaviPayments',
+      partitionKey: { name: 'PK', type: dynamodb.AttributeType.STRING },
+      sortKey: {name: 'SK', type: dynamodb.AttributeType.STRING},
+    })
+
+    naviPaymentsTable.addGlobalSecondaryIndex({
+      indexName: 'status-date',
+      partitionKey: {name: 'PK', type: dynamodb.AttributeType.STRING},
+      sortKey: {name: 'statusTime', type: dynamodb.AttributeType.STRING}
     })
 
     // Permissions
 
     const ssmPolicy = new iam.PolicyStatement()
-    ssmPolicy.addActions("ssm:GetParameter", "ssm:GetParametersByPath")
+    ssmPolicy.addActions('ssm:GetParameter', 'ssm:GetParametersByPath')
     ssmPolicy.addAllResources()
     pkmnQuizBotLambda.addToRolePolicy(ssmPolicy)
-    table.grantReadWriteData(pkmnQuizBotLambda)
+    chatConfigTable.grantReadWriteData(pkmnQuizBotLambda)
     const commandPublisherUser = new iam.User(this, 'TelegramCommandPublisher', {
       userName: 'command-publisher'
     })
