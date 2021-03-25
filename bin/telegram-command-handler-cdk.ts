@@ -7,7 +7,7 @@ import { TelegramCommandHandlerStack } from '../lib/stack/telegram-handler-stack
 const app = new cdk.App();
 const telegramCommandHandlerStack = new TelegramCommandHandlerStack(app, 'TelegramCommandHandlerStack');
 new PipelineStack(app, 'PipelineStack', {
-    env: {region: 'us-west-2'},
+    env: {region: 'eu-central-1'},
     pkmnQuizBotCode: telegramCommandHandlerStack.pkmnQuizBotCode
 });
 
