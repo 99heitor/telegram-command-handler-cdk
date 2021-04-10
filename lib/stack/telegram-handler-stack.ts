@@ -62,9 +62,9 @@ export class TelegramCommandHandlerStack extends Stack {
     })
 
     naviPaymentsTable.addGlobalSecondaryIndex({
-      indexName: 'status-date',
-      partitionKey: {name: 'PK', type: dynamodb.AttributeType.STRING},
-      sortKey: {name: 'statusTime', type: dynamodb.AttributeType.STRING}
+      indexName: 'status-index',
+      partitionKey: {name: 'status', type: dynamodb.AttributeType.STRING},
+      sortKey: {name: 'date', type: dynamodb.AttributeType.STRING}
     })
 
     // Permissions
