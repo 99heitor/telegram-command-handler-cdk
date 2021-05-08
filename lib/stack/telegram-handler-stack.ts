@@ -10,6 +10,7 @@ import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources';
 
 export class TelegramCommandHandlerStack extends Stack {  
   public readonly pkmnQuizBotCode: lambda.CfnParametersCode;
+  public readonly naviBotCode: lambda.CfnParametersCode;
   
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
@@ -17,11 +18,20 @@ export class TelegramCommandHandlerStack extends Stack {
     // Lambda definitions
 
     this.pkmnQuizBotCode = lambda.Code.fromCfnParameters();
+    this.naviBotCode = lambda.Code.fromCfnParameters();
+
     const pkmnQuizBotLambda = new lambda.Function(this, 'Lambda', {
       functionName: 'PkmnQuizBotLambda',
       runtime: lambda.Runtime.GO_1_X,
       handler: 'lambdaHandler',
       code: this.pkmnQuizBotCode,
+    });
+
+    const naviBotLambda = new lambda.Function(this, 'NaviLambda', {
+      functionName: 'TheNaviBotLambda',
+      runtime: lambda.Runtime.NODEJS_14_X,
+      handler: 'dist/index.init',
+      code: this.naviBotCode,
     });
 
     // Creating and connecting topic and queues
@@ -30,6 +40,11 @@ export class TelegramCommandHandlerStack extends Stack {
       queueName: 'pokemon-quiz-command-queue'
     });
     pkmnQuizBotLambda.addEventSource(new SqsEventSource(pkmnCommandQueue))
+
+    const naviCommandQueue = new sqs.Queue(this, 'NaviCommandQueue', {
+      queueName: 'navi-command-queue'
+    });
+    naviBotLambda.addEventSource(new SqsEventSource(naviCommandQueue))
     
     const commandTopic = new sns.Topic(this, 'TelegramCommandTopic', {
       topicName: 'telegram-command-topic'
@@ -37,6 +52,12 @@ export class TelegramCommandHandlerStack extends Stack {
     commandTopic.addSubscription(new subscriptions.SqsSubscription(pkmnCommandQueue, {
       filterPolicy: {
         'bot': sns.SubscriptionFilter.stringFilter({whitelist: ['pokemon-quiz-bot']})
+      },
+      rawMessageDelivery: true
+    }))
+    commandTopic.addSubscription(new subscriptions.SqsSubscription(naviCommandQueue, {
+      filterPolicy: {
+        'bot': sns.SubscriptionFilter.stringFilter({whitelist: ['the-navi-bot']})
       },
       rawMessageDelivery: true
     }))
@@ -73,7 +94,9 @@ export class TelegramCommandHandlerStack extends Stack {
     ssmPolicy.addActions('ssm:GetParameter', 'ssm:GetParametersByPath')
     ssmPolicy.addAllResources()
     pkmnQuizBotLambda.addToRolePolicy(ssmPolicy)
+    naviBotLambda.addToRolePolicy(ssmPolicy)
     chatConfigTable.grantReadWriteData(pkmnQuizBotLambda)
+    naviPaymentsTable.grantReadWriteData(naviBotLambda)
     const commandPublisherUser = new iam.User(this, 'TelegramCommandPublisher', {
       userName: 'command-publisher'
     })

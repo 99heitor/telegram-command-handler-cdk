@@ -7,6 +7,7 @@ import { Construct, Stack, StackProps, Stage } from '@aws-cdk/core';
 
 export interface PipelineStackProps extends StackProps {
   readonly pkmnQuizBotCode: lambda.CfnParametersCode;
+  readonly naviBotCode: lambda.CfnParametersCode;
 }
 
 export class PipelineStack extends Stack {
@@ -30,7 +31,16 @@ export class PipelineStack extends Stack {
         buildImage: codebuild.LinuxBuildImage.AMAZON_LINUX_2
       }
     })
-    
+
+    const naviBotSourceArtifact = new codepipeline.Artifact('NaviBotSourceArtifact');
+    const naviBotBuildArtifact = new codepipeline.Artifact('NaviBotBotBuildArtifact');
+    const naviBotRepo = codecommit.Repository.fromRepositoryName(this, 'NaviBotRepo', "the-navi-bot");
+    const naviBotBuild = new codebuild.PipelineProject(this, 'NaviBotBuild', {
+      environment: {
+        buildImage: codebuild.LinuxBuildImage.STANDARD_5_0
+      }
+    })
+
     new codepipeline.Pipeline(this, 'Pipeline', {
       stages: [
         {
@@ -47,6 +57,12 @@ export class PipelineStack extends Stack {
               repository: pkmnQuizBotRepo,
               output: pkmnQuizBotSourceArtifact,
               branch: 'lambda'
+            }),
+            new codepipeline_actions.CodeCommitSourceAction({
+              actionName: 'CodeCommit_NaviBot_Source',
+              repository: naviBotRepo,
+              output: naviBotSourceArtifact,
+              branch: 'master'
             })
           ],
         },
@@ -65,6 +81,12 @@ export class PipelineStack extends Stack {
               input: pkmnQuizBotSourceArtifact,
               outputs: [pkmnQuizBotBuildArtifact],
             }),
+            new codepipeline_actions.CodeBuildAction({
+              actionName: 'NaviBot_Build',
+              project: naviBotBuild,
+              input: naviBotSourceArtifact,
+              outputs: [naviBotBuildArtifact],
+            }),
           ],
         },
         {
@@ -77,8 +99,9 @@ export class PipelineStack extends Stack {
               adminPermissions: true,
               parameterOverrides: {
                 ...props.pkmnQuizBotCode.assign(pkmnQuizBotBuildArtifact.s3Location),
+                ...props.naviBotCode.assign(naviBotBuildArtifact.s3Location)
               },
-              extraInputs: [pkmnQuizBotBuildArtifact],
+              extraInputs: [pkmnQuizBotBuildArtifact, naviBotBuildArtifact],
             }),
           ],
         },

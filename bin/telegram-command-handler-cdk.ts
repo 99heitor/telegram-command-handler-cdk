@@ -8,7 +8,8 @@ const app = new cdk.App();
 const telegramCommandHandlerStack = new TelegramCommandHandlerStack(app, 'TelegramCommandHandlerStack');
 new PipelineStack(app, 'PipelineStack', {
     env: {region: 'eu-central-1'},
-    pkmnQuizBotCode: telegramCommandHandlerStack.pkmnQuizBotCode
+    pkmnQuizBotCode: telegramCommandHandlerStack.pkmnQuizBotCode,
+    naviBotCode: telegramCommandHandlerStack.naviBotCode,
 });
 
 app.synth();
